@@ -1,36 +1,33 @@
 import sys
+import threading
 import socket
-
 
 #print("argumenty: ", sys.argv[1])
 
+HOST = '0.0.0.0'
+PORT = 12000
 
-
-def server_program():
-    # get the hostname
-    host = socket.gethostname()
-    port = 5000  # initiate port no above 1024
-
-    server_socket = socket.socket()  # get instance
-    # look closely. The bind() function takes tuple as argument
-    server_socket.bind((host, port))  # bind host address and port together
-
-    # configure how many client the server can listen simultaneously
-    server_socket.listen(2)
-    conn, address = server_socket.accept()  # accept new connection
-    print("Connection from: " + str(address))
+def handle_communication(client_socket, address):
+    print("Connected to: ")
     while True:
-        # receive data stream. it won't accept data packet greater than 1024 bytes
-        data = conn.recv(1024).decode()
-        if not data:
-            # if data is not received break
+        try:
+            data = client_socket.recv(1024).decode()
+            if not data:
+                break
+            print(f"[{address}] recv: {data}")
+            client_socket.send(f"RECV: {data}".encode())
+        except ConnectionResetError:
             break
-        print("from connected user: " + str(data))
-        data = input(' -> ')
-        conn.send(data.encode())  # send data to the client
+    print(f"CONNECTON TERMINATED WITH {address}")
+    client_socket.close()
+    
 
-    conn.close()  # close the connection
+SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+SERVER.bind((HOST, PORT))
+SERVER.listen(2)
 
 
-if __name__ == '__main__':
-    server_program()
+while True:
+    client_socket, addr = SERVER.accept()
+    client_thread = threading.Thread(target=handle_communication, args=(client_socket, addr))
+    client_thread.start()
