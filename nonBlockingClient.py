@@ -13,3 +13,5 @@ try:
             print(response)
 except KeyboardInterrupt:
     server.close()
+finally:
+    server.close()
