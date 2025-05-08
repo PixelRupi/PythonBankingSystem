@@ -1,7 +1,7 @@
 import socket
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.connect(('localhost', 15555))
+server.connect(('127.0.0.1', 15555))
 request = None
 
 try:

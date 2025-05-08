@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  mariadb:
+    image: mariadb
+    container_name: mariadb_con
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: PythonBank
+    ports:
+      - 3306:3306 #
+    networks:
+      - backend
+  adminer:
+    image: adminer
+    restart: always
+    environment:
+      ADMINER_DEFAULT_SERVER: mariadb
+    ports:
+      - 8080:8080
+    networks:
+      - backend
+networks:
+  backend: null
+

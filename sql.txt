@@ -1,0 +1,26 @@
+CREATE TABLE credentials (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    login VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    pin VARCHAR(10) NOT NULL,
+    uuid_client CHAR(36) NOT NULL UNIQUE
+);
+
+
+CREATE TABLE funds (
+    uuid CHAR(36) PRIMARY KEY,
+    funds DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    max_amount DECIMAL(12,2) NOT NULL DEFAULT 1000.00
+);
+
+CREATE TABLE history (
+    transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+    uuid_from CHAR(36) NOT NULL,
+    uuid_to CHAR(36) NOT NULL,
+    operation VARCHAR(50) NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    FOREIGN KEY (uuid_from) REFERENCES funds(uuid),
+    FOREIGN KEY (uuid_to) REFERENCES funds(uuid)
+);
+
+

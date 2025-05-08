@@ -75,6 +75,8 @@ async def handle_client(reader, writer):
             else:
                 response = "Nie znaleziono danych konta."
 
+        else:
+            response = "Nieznane polecenie."
         writer.write(response.encode('utf8'))
         await writer.drain()
 
