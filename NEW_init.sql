@@ -30,12 +30,20 @@ CREATE TABLE history (
 
 -- Przykładowi użytkownicy
 
+
+-- haslo123
+-- haslo1234
+-- haselko#
+-- haslo123
+-- haslo1234
+-- haselko#
+
 INSERT INTO credentials (login, password, pin, uuid_client) VALUES
-('jan_kowalski', 'haslo123', '1234', '11111111-1111-1111-1111-111111111111'),
-('anna_nowak', 'bezpiecznehaslo', '5678', '22222222-2222-2222-2222-222222222222'),
-('mercedes', 'haselko#', '2137', '33333333-3333-3333-3333-333333333333'),
-('zelislaw-zyzynski', 'haslo123', '9712', '44444444-4444-4444-4444-444444444444'),
-('sigmund_freud', 'bezpiecznehaslo', '8921', '55555555-5555-5555-5555-555555555555');
+('jan_kowalski', 'a15f8ae07675bfb96e084bfb4f52fb2c22091061aae86e0eb76a55f4e52dd74e', '1234', '11111111-1111-1111-1111-111111111111'),
+('anna_nowak', '04a875420e73e666e46ca88e300592fe63f3890b86e115bfd0ffcf02aa1d65c1', '5678', '22222222-2222-2222-2222-222222222222'),
+('mercedes', 'aa30aa052a05879e00eb8347861c15e9929b7f3ec1897c29d785697d2fd3273c', '2137', '33333333-3333-3333-3333-333333333333'),
+('zelislaw-zyzynski', 'a15f8ae07675bfb96e084bfb4f52fb2c22091061aae86e0eb76a55f4e52dd74e', '9712', '44444444-4444-4444-4444-444444444444'),
+('sigmund_freud', '04a875420e73e666e46ca88e300592fe63f3890b86e115bfd0ffcf02aa1d65c1', '8921', '55555555-5555-5555-5555-555555555555');
 
 
 INSERT INTO funds (uuid, funds, max_amount) VALUES

@@ -2,7 +2,6 @@ import asyncio
 import pymysql
 import uuid
 
-# Połączenie z bazą danych
 db = pymysql.connect(
     host='127.0.0.1',
     user='root',
@@ -10,10 +9,8 @@ db = pymysql.connect(
     database='PythonBank'
 )
 
-# Mapa sesji: token → uuid_client
 session_tokens = {}
 
-# Uwierzytelnianie
 def authenticate_user(cursor, login, password, pin):
     query = """
         SELECT uuid_client FROM credentials
@@ -23,7 +20,6 @@ def authenticate_user(cursor, login, password, pin):
     result = cursor.fetchone()
     return result[0] if result else None
 
-# Obsługa klienta
 async def handle_client(reader, writer):
     addr = writer.get_extra_info('peername')[0]
     cursor = db.cursor()
@@ -39,7 +35,6 @@ async def handle_client(reader, writer):
             parts = request.split()
             command = parts[0]
 
-            # logowanie <login> <haslo> <pin>
             if command == 'login' and len(parts) == 4:
                 login, password, pin = parts[1], parts[2], parts[3]
                 uuid_client = authenticate_user(cursor, login, password, pin)
@@ -50,23 +45,20 @@ async def handle_client(reader, writer):
                 else:
                     response = "Błędne dane logowania"
 
-            # komendy z tokenem
             elif command == 'token' and len(parts) >= 3:
                 token = parts[1]
                 subcommand = parts[2]
                 args = parts[3:]
                 uuid_client = session_tokens.get(token)
 
-                # wlasciwe komendy      \|/
                 if not uuid_client:
                     response = "Nieprawidłowy lub wygasły token."
                 else:
-                    # wylogowanie
                     if subcommand == 'logout':
                         response = "Wylogowano pomyślnie."
                         session_tokens.pop(token, None)
-                    # stan konta
-                    if subcommand == 'balance' or subcommand == "bal":
+
+                    elif subcommand == 'balance' or subcommand == 'bal':
                         cursor.execute("SELECT funds, max_amount FROM funds WHERE uuid=%s", (uuid_client,))
                         result = cursor.fetchone()
                         if result:
@@ -75,7 +67,6 @@ async def handle_client(reader, writer):
                         else:
                             response = "Nie znaleziono konta."
 
-                    # historia
                     elif subcommand == 'history':
                         cursor.execute("""
                             SELECT uuid_from, uuid_to, operation, amount
@@ -90,7 +81,42 @@ async def handle_client(reader, writer):
                         else:
                             response = "Brak transakcji."
 
-                    # transfer <uuid_to> <kwota>
+                    elif subcommand == 'deposit' and len(args) == 1:
+                        try:
+                            amount = float(args[0])
+                            if amount <= 0:
+                                response = "Kwota musi być dodatnia."
+                            else:
+                                cursor.execute("UPDATE funds SET funds = funds + %s WHERE uuid = %s", (amount, uuid_client))
+                                cursor.execute("INSERT INTO history (uuid_from, uuid_to, operation, amount) VALUES (%s, %s, 'deposit', %s)",
+                                               (uuid_client, uuid_client, amount))
+                                db.commit()
+                                response = f"Wpłacono {amount} zł"
+                        except ValueError:
+                            response = "Nieprawidłowa kwota."
+
+                    elif subcommand == 'withdraw' and len(args) == 1:
+                        try:
+                            amount = float(args[0])
+                            cursor.execute("SELECT funds, max_amount FROM funds WHERE uuid = %s", (uuid_client,))
+                            result = cursor.fetchone()
+                            if not result:
+                                response = "Nie znaleziono konta."
+                            else:
+                                funds, max_amount = result
+                                if amount <= 0:
+                                    response = "Kwota musi być dodatnia."
+                                elif amount > (funds + max_amount):
+                                    response = "Brak wystarczających środków."
+                                else:
+                                    cursor.execute("UPDATE funds SET funds = funds - %s WHERE uuid = %s", (amount, uuid_client))
+                                    cursor.execute("INSERT INTO history (uuid_from, uuid_to, operation, amount) VALUES (%s, %s, 'withdraw', %s)",
+                                                   (uuid_client, uuid_client, amount))
+                                    db.commit()
+                                    response = f"Wypłacono {amount} zł"
+                        except ValueError:
+                            response = "Nieprawidłowa kwota."
+
                     elif subcommand == 'transfer' and len(args) == 2:
                         uuid_to, amount_str = args
                         try:
@@ -109,15 +135,12 @@ async def handle_client(reader, writer):
                                     else:
                                         funds, max_amount = row
                                         if amount > (funds + max_amount):
-                                            response = f"Brak środków. Dostępne: {funds + max_amount}"
+                                            response = f"Brak środków. Dostępne: {funds}"
                                         else:
-                                            # wykonanie przelewu
                                             cursor.execute("UPDATE funds SET funds = funds - %s WHERE uuid = %s", (amount, uuid_client))
                                             cursor.execute("UPDATE funds SET funds = funds + %s WHERE uuid = %s", (amount, uuid_to))
-                                            cursor.execute(
-                                                "INSERT INTO history (uuid_from, uuid_to, operation, amount) VALUES (%s, %s, 'transfer', %s)",
-                                                (uuid_client, uuid_to, amount)
-                                            )
+                                            cursor.execute("INSERT INTO history (uuid_from, uuid_to, operation, amount) VALUES (%s, %s, 'transfer', %s)",
+                                                           (uuid_client, uuid_to, amount))
                                             db.commit()
                                             response = f"Przesłano {amount} zł do {uuid_to}"
                         except ValueError:
@@ -125,7 +148,6 @@ async def handle_client(reader, writer):
 
                     else:
                         response = "Nieznana komenda."
-
             else:
                 response = "Najpierw się zaloguj (login <login> <haslo> <pin>)"
 
@@ -138,7 +160,6 @@ async def handle_client(reader, writer):
     writer.close()
     await writer.wait_closed()
 
-# Uruchomienie serwera
 async def run_server():
     server = await asyncio.start_server(handle_client, '0.0.0.0', 5005)
     async with server:
